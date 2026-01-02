@@ -60,17 +60,10 @@ class InstagramService {
    */
   async fetchOEmbedData(embedUrl: string): Promise<InstagramOEmbedResponse> {
     try {
-      // Instagram's oEmbed endpoint
-      // Note: This may require CORS proxy in production
-      const oembedUrl = `https://graph.facebook.com/v12.0/instagram_oembed?url=${encodeURIComponent(embedUrl)}&access_token=YOUR_ACCESS_TOKEN`;
+      // Use Instagram's public oEmbed endpoint
+      const oembedUrl = `https://graph.facebook.com/v18.0/instagram_oembed?url=${encodeURIComponent(embedUrl)}&omitscript=true`;
       
-      // Alternative approach: Use a CORS proxy or serverless function
-      // For now, we'll use a fallback method that extracts from the page
-      const response = await fetch(`https://www.instagram.com/p/${this.parseInstagramUrl(embedUrl)}/?__a=1&__d=dis`, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
-      });
+      const response = await fetch(oembedUrl);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch Instagram data: ${response.status}`);
@@ -78,30 +71,23 @@ class InstagramService {
 
       const data = await response.json();
       
-      // Extract relevant data from Instagram's JSON response
-      const media = data?.items?.[0] || data?.graphql?.shortcode_media;
-      
-      if (!media) {
-        throw new Error('Could not extract media data from Instagram response');
-      }
-
-      // Map to oEmbed format
+      // Instagram oEmbed returns the data we need
       const oembedData: InstagramOEmbedResponse = {
-        version: '1.0',
-        title: media.caption?.text || '',
-        author_name: media.owner?.username || media.user?.username || 'unknown',
-        author_url: `https://www.instagram.com/${media.owner?.username || media.user?.username || ''}`,
-        author_id: parseInt(media.owner?.id || media.user?.pk || '0'),
-        media_id: media.id || media.pk || '',
-        provider_name: 'Instagram',
-        provider_url: 'https://www.instagram.com',
-        type: media.media_type === 2 ? 'video' : 'photo',
-        width: media.dimensions?.width || 640,
-        height: media.dimensions?.height || 640,
-        html: '', // We'll construct this
-        thumbnail_url: media.display_url || media.image_versions2?.candidates?.[0]?.url || '',
-        thumbnail_width: media.dimensions?.width || 640,
-        thumbnail_height: media.dimensions?.height || 640,
+        version: data.version || '1.0',
+        title: data.title || '',
+        author_name: data.author_name || 'unknown',
+        author_url: data.author_url || 'https://www.instagram.com',
+        author_id: data.author_id || 0,
+        media_id: data.media_id || '',
+        provider_name: data.provider_name || 'Instagram',
+        provider_url: data.provider_url || 'https://www.instagram.com',
+        type: data.type || 'photo',
+        width: data.width || 640,
+        height: data.height || 640,
+        html: data.html || '',
+        thumbnail_url: data.thumbnail_url || '',
+        thumbnail_width: data.thumbnail_width || 640,
+        thumbnail_height: data.thumbnail_height || 640,
       };
 
       return oembedData;
