@@ -1,0 +1,7 @@
+{
+  "name": "Vee - Digital Archive",
+  "description": "A curated demonstration site for the Vee Instagram archive, featuring AI-powered categorization and historical timeline of 588 posts.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
