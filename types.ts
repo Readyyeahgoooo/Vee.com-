@@ -31,6 +31,7 @@ export interface InstagramGalleryPost {
   mediaType: 'IMAGE' | 'VIDEO' | 'CAROUSEL';
   order: number;                 // Display order in gallery
   createdAt: string;             // When added to gallery
+  embedHtml?: string;            // Full Instagram embed HTML (optional)
 }
 
 export interface AdminState {

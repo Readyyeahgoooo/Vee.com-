@@ -27,6 +27,37 @@ class InstagramService {
   }
 
   /**
+   * Extracts Instagram URL from embed code or returns the URL if already a URL
+   * @param input - Instagram URL or embed code
+   * @returns string - Clean Instagram URL
+   */
+  extractUrlFromInput(input: string): string {
+    // If it's already a URL, return it
+    if (input.trim().startsWith('http')) {
+      return input.trim();
+    }
+    
+    // Extract URL from embed code
+    const urlMatch = input.match(/https:\/\/www\.instagram\.com\/p\/[A-Za-z0-9_-]+\//);
+    if (urlMatch) {
+      return urlMatch[0];
+    }
+    
+    throw new Error('Could not extract Instagram URL from input');
+  }
+
+  /**
+   * Extracts thumbnail URL from Instagram embed code
+   * @param embedCode - Instagram embed HTML
+   * @returns string | null - Thumbnail URL or null
+   */
+  extractThumbnailFromEmbed(embedCode: string): string | null {
+    // Look for image URLs in the embed code
+    const imgMatch = embedCode.match(/https:\/\/[^\s"']+\.(?:jpg|jpeg|png|webp)/i);
+    return imgMatch ? imgMatch[0] : null;
+  }
+
+  /**
    * Validates Instagram URL format
    * @param url - URL to validate
    * @returns boolean
@@ -144,11 +175,14 @@ class InstagramService {
   }
 
   /**
-   * Creates InstagramGalleryPost from embed URL
-   * @param embedUrl - Instagram post URL
+   * Creates InstagramGalleryPost from embed URL or embed code
+   * @param input - Instagram post URL or embed code
    * @returns Promise<InstagramGalleryPost>
    */
-  async createPostFromEmbed(embedUrl: string): Promise<InstagramGalleryPost> {
+  async createPostFromEmbed(input: string): Promise<InstagramGalleryPost> {
+    // Extract URL from input (handles both URL and embed code)
+    const embedUrl = this.extractUrlFromInput(input);
+    
     if (!this.isValidInstagramUrl(embedUrl)) {
       throw new Error('Invalid Instagram URL');
     }
@@ -166,20 +200,30 @@ class InstagramService {
         mediaType = 'VIDEO';
       }
       
+      // Try to extract thumbnail from original input if it's embed code
+      let thumbnailUrl = oembedData.thumbnail_url;
+      if (input.includes('<blockquote')) {
+        const extractedThumb = this.extractThumbnailFromEmbed(input);
+        if (extractedThumb) {
+          thumbnailUrl = extractedThumb;
+        }
+      }
+      
       // Extract media URLs
-      const mediaUrls = [oembedData.thumbnail_url];
+      const mediaUrls = [thumbnailUrl];
       
       const post: InstagramGalleryPost = {
         id,
         embedUrl,
-        thumbnailUrl: oembedData.thumbnail_url,
+        thumbnailUrl,
         mediaUrls,
         caption: oembedData.title || '',
         author: oembedData.author_name,
-        timestamp: new Date().toISOString(), // Instagram doesn't provide this in oEmbed
+        timestamp: new Date().toISOString(),
         mediaType,
-        order: 0, // Will be set when added to gallery
+        order: 0,
         createdAt: new Date().toISOString(),
+        embedHtml: oembedData.html, // Store the full embed HTML
       };
 
       return post;

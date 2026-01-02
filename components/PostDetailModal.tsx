@@ -8,6 +8,29 @@ interface PostDetailModalProps {
 }
 
 const PostDetailModal: React.FC<PostDetailModalProps> = ({ post, isOpen, onClose }) => {
+  const [embedLoaded, setEmbedLoaded] = React.useState(false);
+
+  React.useEffect(() => {
+    if (isOpen && post?.embedHtml) {
+      // Load Instagram embed script
+      const script = document.createElement('script');
+      script.src = '//www.instagram.com/embed.js';
+      script.async = true;
+      script.onload = () => {
+        setEmbedLoaded(true);
+        // Process embeds
+        if ((window as any).instgrm) {
+          (window as any).instgrm.Embeds.process();
+        }
+      };
+      document.body.appendChild(script);
+
+      return () => {
+        document.body.removeChild(script);
+      };
+    }
+  }, [isOpen, post]);
+
   if (!isOpen || !post) return null;
 
   return (
@@ -20,8 +43,17 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({ post, isOpen, onClose
         onClick={(e) => e.stopPropagation()}
       >
         {/* Media Section */}
-        <div className="flex-1 bg-zinc-950/50 flex items-center justify-center p-6 relative overflow-hidden">
-          {post.mediaType === 'VIDEO' ? (
+        <div className="flex-1 bg-zinc-950/50 flex items-center justify-center p-6 relative overflow-auto custom-scrollbar">
+          {post.embedHtml ? (
+            /* Instagram Embed with Custom Styling */
+            <div 
+              className="instagram-embed-wrapper w-full max-w-[540px]"
+              dangerouslySetInnerHTML={{ __html: post.embedHtml }}
+              style={{
+                filter: 'invert(1) hue-rotate(180deg)',
+              }}
+            />
+          ) : post.mediaType === 'VIDEO' ? (
             <video
               src={post.mediaUrls[0]}
               controls
@@ -34,7 +66,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({ post, isOpen, onClose
               className="max-h-[85vh] w-full object-contain md:rounded-[40px] shadow-2xl relative z-10"
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-tr from-yellow-500/10 to-transparent opacity-30"></div>
+          <div className="absolute inset-0 bg-gradient-to-tr from-yellow-500/10 to-transparent opacity-30 pointer-events-none"></div>
         </div>
 
         {/* Info Section */}

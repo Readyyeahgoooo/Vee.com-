@@ -125,7 +125,7 @@ const InstagramGallerySection: React.FC = () => {
       <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-10">
         <div className="space-y-3">
           <h2 className="text-5xl lg:text-7xl font-black tracking-tighter italic uppercase leading-none text-zinc-100">
-            Instagram Gallery
+            Projects
           </h2>
           <div className="flex items-center gap-6">
             <div className="flex -space-x-3">
@@ -137,7 +137,7 @@ const InstagramGallerySection: React.FC = () => {
               ))}
             </div>
             <p className="text-zinc-500 text-[11px] font-bold uppercase tracking-[0.3em]">
-              Instagram Archive / {galleryPosts.length} Posts
+              Archive / {galleryPosts.length} Posts
             </p>
           </div>
         </div>
